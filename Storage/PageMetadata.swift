@@ -2,24 +2,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-enum MetadataKeys: String {
-    case imageURL = "image"
-    case imageDataURI = "image_data_uri"
-    case pageURL = "url"
-    case title = "title"
-    case description = "description"
-    case type = "type"
-    case provider = "provider"
-    case favicon = "icon"
-    case largeIcon = "largeIcon"
-    case keywords = "keywords"
-}
-
 /*
  * Value types representing a page's metadata
  */
-public struct PageMetadata {
-    public let id: Int?
+public struct PageMetadata: Decodable {
+    public var id: Int?
     public let siteURL: String
     public let mediaURL: String?
     public let title: String?
@@ -29,6 +16,8 @@ public struct PageMetadata {
     public let faviconURL: String?
     public let largeIconURL: String?
     public let keywordsString: String?
+    public let feeds: [Feed]
+    
     public var keywords: Set<String> {
         guard let string = keywordsString else {
             return Set()
@@ -37,8 +26,21 @@ public struct PageMetadata {
         let strings = string.split(separator: ",", omittingEmptySubsequences: true).map(String.init)
         return Set(strings)
     }
+    
+    enum CodingKeys: String, CodingKey {
+        case mediaURL = "image"
+        case siteURL = "url"
+        case title
+        case description
+        case type
+        case providerName = "provider"
+        case faviconURL = "icon"
+        case largeIconURL = "largeIcon"
+        case keywordsString = "keywords"
+        case feeds
+    }
 
-    public init(id: Int?, siteURL: String, mediaURL: String?, title: String?, description: String?, type: String?, providerName: String?, faviconURL: String? = nil, largeIconURL: String? = nil, keywords: String? = nil) {
+    public init(id: Int?, siteURL: String, mediaURL: String?, title: String?, description: String?, type: String?, providerName: String?, faviconURL: String? = nil, largeIconURL: String? = nil, keywords: String? = nil, feeds: [Feed] = []) {
         self.id = id
         self.siteURL = siteURL
         self.mediaURL = mediaURL
@@ -49,15 +51,11 @@ public struct PageMetadata {
         self.faviconURL = faviconURL
         self.largeIconURL = largeIconURL
         self.keywordsString = keywords
+        self.feeds = feeds
     }
-
-    public static func fromDictionary(_ dict: [String: Any]) -> PageMetadata? {
-        guard let siteURL = dict[MetadataKeys.pageURL.rawValue] as? String else {
-            return nil
-        }
-
-        return PageMetadata(id: nil, siteURL: siteURL, mediaURL: dict[MetadataKeys.imageURL.rawValue] as? String,
-                            title: dict[MetadataKeys.title.rawValue] as? String, description: dict[MetadataKeys.description.rawValue] as? String,
-                            type: dict[MetadataKeys.type.rawValue] as? String, providerName: dict[MetadataKeys.provider.rawValue] as? String, faviconURL: dict[MetadataKeys.favicon.rawValue] as? String, largeIconURL: dict[MetadataKeys.largeIcon.rawValue] as? String, keywords: dict[MetadataKeys.keywords.rawValue] as? String)
+    
+    public struct Feed: Decodable {
+        public var href: String
+        public var title: String
     }
 }
